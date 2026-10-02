@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gastos v3</title>
+<style>
+body{margin:0;background:#111;color:#fff;font-family:Arial;padding:10px;padding-bottom:150px}
+.topo{background:#ffcc00;color:#000;padding:15px;text-align:center;font-weight:900;border-radius:12px;font-size:18px}
+.saldo{display:flex;gap:8px;margin:10px 0}
+.saldo div{flex:1;background:#222;padding:10px;border-radius:10px;text-align:center;border:1px solid #333}
+.caixa{background:#222;border-radius:12px;padding:12px;margin:10px 0}
+select,input{width:100%;padding:14px;margin:6px 0;border-radius:10px;border:1px solid #555;background:#000;color:#fff;font-size:16px}
+button{width:100%;padding:14px;border-radius:10px;border:none;font-weight:900;margin:5px 0;font-size:15px}
+.btn-salvar{background:#ffcc00;color:#000}
+.item{background:#111;border-left:4px solid #ffcc00;padding:10px;margin:6px 0;border-radius:8px;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+<div class="topo">💰 CONTROLE DE GASTOS v3 🔥</div>
+<div class="saldo">
+<div>Entradas<br><b id="e" style="color:#0f0">R$ 0,00</b></div>
+<div>Saídas<br><b id="s" style="color:#f44">R$ 0,00</b></div>
+<div>Saldo<br><b id="t" style="color:#ff0">R$ 0,00</b></div>
+</div>
+
+<div class="caixa">
+<select id="tipo" onchange="troca()">
+<option value="entrada">📥 Recebi</option>
+<option value="saida" selected>📤 Gastei</option>
+</select>
+
+<select id="cat">
+<option>Alimentação</option>
+<option>Empréstimo</option>
+<option>Gás</option>
+<option>Aluguel</option>
+<option>Casa</option>
+<option>Roupas</option>
+<option>Cigarro</option>
+<option>Lazer</option>
+<option>Aline Esposa</option>
+<option>Ração</option>
+<option>Luz</option>
+<option>Água</option>
+<option>Internet</option>
+<option>Combustível</option>
+<option>Manutenções Moto</option>
+<option>Farmácia</option>
+<option>Mercado</option>
+</select>
+
+<input id="desc" placeholder="Descrição ex: Salário, Mercado">
+<input id="val" placeholder="Valor ex: 995" inputmode="decimal">
+<button class="btn-salvar" onclick="salvar()">💾 LANÇAMENTO SALVAR</button>
+</div>
+
+<div class="caixa"><div id="lista">Nenhum ainda</div></div>
+
+<div class="caixa">
+<button onclick="backup()" style="background:#0a0;color:#fff">💾 BACKUP</button>
+<button onclick="document.getElementById('file').click()" style="background:#00aaff;color:#fff">♻️ RESTAURAR</button>
+<input type="file" id="file" accept=".json" style="display:none">
+<button onclick="recup()" style="background:#ffcc00;color:#000">🔍 RECUPERAR ANTIGO</button>
+<button onclick="zerar()" style="background:#300;color:#f55;border:1px solid #f55">🗑️ ZERAR TUDO</button>
+</div>
+
+<script>
+let KEY="meus_gastos_v3_final_nunca_apaga";
+let dados=[];
+try{let j=localStorage.getItem(KEY); if(j) dados=JSON.parse(j);
+if(dados.length==0){let old=localStorage.getItem("plugtv_GASTOS_GATOS_FINAL")||localStorage.getItem("plugtv_GASTOS_v3_FINAL_UNICO")||localStorage.getItem("controle_gastos_v3_dados_final"); if(old){let a=JSON.parse(old); if(Array.isArray(a)) dados=a; else if(a.dados) dados=a.dados;}}
+}catch(e){}
+
+function troca(){
+ let tipo=document.getElementById('tipo').value;
+ let sel=document.getElementById('cat');
+ if(tipo==='entrada'){
+  sel.innerHTML='<option>Bolsa Família</option><option>Trabalho</option><option>Dívidas Recebidas</option><option>Salário Extra</option><option>Salário</option><option>Empréstimo Recebido</option><option>Pix Recebido</option>';
+ }else{
+  sel.innerHTML='<option>Alimentação</option><option>Empréstimo</option><option>Gás</option><option>Aluguel</option><option>Casa</option><option>Roupas</option><option>Cigarro</option><option>Lazer</option><option>Aline Esposa</option><option>Ração</option><option>Luz</option><option>Água</option><option>Internet</option><option>Combustível</option><option>Manutenções Moto</option><option>Farmácia</option><option>Mercado</option>';
+ }
+}
+
+function salvar(){
+ let d=document.getElementById('desc').value.trim();
+ let v=document.getElementById('val').value.replace(',','.').trim();
+ let valor=parseFloat(v);
+ let tipo=document.getElementById('tipo').value;
+ let cat=document.getElementById('cat').value;
+ if(!d){alert('Digite descrição');document.getElementById('desc').focus();return;}
+ if(isNaN(valor)){alert('Digite valor ex: 995');document.getElementById('val').focus();return;}
+ dados.push({desc:d,valor:valor,tipo:tipo,gato:cat,data:new Date().toLocaleDateString()});
+ localStorage.setItem(KEY,JSON.stringify(dados));
+ // salva em mais 3 lugares pra nunca sumir
+ localStorage.setItem("plugtv_GASTOS_GATOS_FINAL",JSON.stringify(dados));
+ localStorage.setItem("plugtv_GASTOS_v3_FINAL_UNICO",JSON.stringify(dados));
+ document.getElementById('desc').value='';document.getElementById('val').value='';
+ atualizar();
+}
+
+function atualizar(){
+ let ent=0,sai=0;
+ dados.forEach(x=>{if(x.tipo==='entrada')ent+=Number(x.valor);else sai+=Number(x.valor);});
+ document.getElementById('e').innerText='R$ '+ent.toFixed(2).replace('.',',');
+ document.getElementById('s').innerText='R$ '+sai.toFixed(2).replace('.',',');
+ document.getElementById('t').innerText='R$ '+(ent-sai).toFixed(2).replace('.',',');
+ let lista=document.getElementById('lista');
+ if(dados.length==0)lista.innerHTML='Nenhum ainda';
+ else{lista.innerHTML='';dados.slice().reverse().forEach((x,i)=>{let idx=dados.length-1-i;lista.innerHTML+=`<div class="item" style="border-left-color:${x.tipo==='entrada'?'#0f0':'#ffcc00'}"><span><b>${x.desc}</b> R$ ${Number(x.valor).toFixed(2)}<br><small>${x.gato}</small></span><button onclick="apagar(${idx})" style="width:auto;background:#333;color:#fff;padding:6px 10px">🗑️</button></div>`;});}
+}
+
+function apagar(i){if(confirm('Excluir?')){dados.splice(i,1);localStorage.setItem(KEY,JSON.stringify(dados));atualizar();}}
+function zerar(){if(confirm('Apagar tudo?')){dados=[];localStorage.setItem(KEY,JSON.stringify(dados));atualizar();}}
+function backup(){let blob=new Blob([JSON.stringify({dados:dados})],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup.json';a.click();}
+document.getElementById('file').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{try{let o=JSON.parse(ev.target.result);let arr=Array.isArray(o)?o:o.dados;if(arr&&confirm('Restaurar '+arr.length+'?')){dados=arr;localStorage.setItem(KEY,JSON.stringify(dados));atualizar();}}catch(err){alert('Erro');}};r.readAsText(f);};
+function recup(){let todos=[];for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k.toLowerCase().includes('gasto')){try{let v=JSON.parse(localStorage.getItem(k));let arr=Array.isArray(v)?v:v.dados||[];todos=todos.concat(arr);}catch(e){}}}if(todos.length&&confirm('Achei '+todos.length+' recuperar?')){dados=todos;localStorage.setItem(KEY,JSON.stringify(dados));atualizar();}else alert('Nada achado');}
+
+troca();atualizar();
+</script>
+</body>
+</html>
